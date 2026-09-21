@@ -306,7 +306,7 @@
     display:grid; grid-template-columns:repeat(20,1fr); gap:4px;
   }
   @media(max-width:900px){ .alloc{ grid-template-columns:repeat(15,1fr); } }
-  @media(max-width:560px){ .alloc{ grid-template-columns:repeat(10,1fr); gap:3px; } }
+  @media(max-width:560px){ .alloc{ grid-template-columns:repeat(8,1fr); gap:4px; } }   /* ~38px touch targets on phones */
   .cell{
     aspect-ratio:1/1; border:1px solid var(--line-hi); background:transparent;
     padding:0; cursor:pointer; border-radius:0;
@@ -320,6 +320,36 @@
   .cell.sel{
     border-color:var(--gold); background:var(--gold); transform:scale(1.28);
   }
+  /* unit number: a quiet reference in the top-left corner. Sized off the
+     cell itself (cqi) so it stays proportional from 25px phone cells to
+     55px tablet cells; the first font-size is the fallback. */
+  .cell{ position:relative; container-type:inline-size; }
+  .cell-no{
+    position:absolute; top:max(3px,9cqi); left:max(3px,10cqi);
+    font-family:var(--mono); font-weight:500; line-height:1;
+    font-size:9px; font-size:clamp(9px,26cqi,11px);
+    letter-spacing:-.04em; font-variant-numeric:tabular-nums;
+    color:var(--dim); pointer-events:none; user-select:none;
+    transition:color .18s ease;
+  }
+  .cell:hover .cell-no{ color:var(--gold-light); }
+  .cell.taken .cell-no{ color:var(--dim-2); }
+  .cell.taken:hover .cell-no{ color:var(--ink-2); }
+  .cell.sel .cell-no{ color:#0a0a0a; }
+  /* pending: an application is in review; hatched so it never reads as taken or free */
+  .cell.pending{
+    border-color:var(--gold-deep); cursor:not-allowed;
+    background:repeating-linear-gradient(135deg, #C0892E2e 0 1px, transparent 1px 5px);
+  }
+  .cell.pending:hover{ transform:none; border-color:var(--gold-soft); background-color:#C0892E14; }
+  .cell.pending .cell-no{ color:var(--gold-soft); }
+  /* reserved: 001 and 300 are structural bookends of the range, never
+     assignable to anyone. Quieter than taken, because nobody holds them. */
+  .cell.reserved{
+    border-color:var(--line); background:#ffffff05; cursor:not-allowed;
+  }
+  .cell.reserved:hover{ transform:none; border-color:var(--line-mid); background:#ffffff08; }
+  .cell.reserved .cell-no{ color:var(--dim-2); opacity:.55; }
   .alloc{ scroll-margin-top:104px; }
   .alloc.flash, .flash-pulse{ animation:mapFlash 1.5s ease; }
   @keyframes mapFlash{
@@ -336,9 +366,19 @@
   .alloc-state{ font-family:var(--mono); font-size:10px; letter-spacing:.24em; text-transform:uppercase; }
   .alloc-state.free{ color:var(--gold-soft); }
   .alloc-state.taken{ color:var(--red); }
-  .alloc-bar{ height:2px; background:var(--line-mid); margin:24px 0 10px; overflow:hidden; }
+  .alloc-state.pending{ color:var(--ink-2); }
+  .alloc-state.reserved{ color:var(--dim-2); }
+  .alloc-legend{ list-style:none; margin:22px 0 0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+  .alloc-legend li{ display:flex; align-items:center; gap:9px; }
+  .sw{ width:12px; height:12px; flex:none; border:1px solid var(--line-hi); }
+  .sw-sel{ background:var(--gold); border-color:var(--gold); }
+  .sw-pending{ border-color:var(--gold-deep); background:repeating-linear-gradient(135deg, #C0892E55 0 1px, transparent 1px 4px); }
+  .sw-taken{ border-color:var(--line); background:#ffffff14; }
+  .sw-reserved{ border-color:var(--line); background:#ffffff05; opacity:.6; }
+  .alloc-bar{ display:flex; height:2px; background:var(--line-mid); margin:24px 0 10px; overflow:hidden; }
   .alloc-bar i{ display:block; height:100%; width:0; background:var(--gold-ramp); transition:width .8s cubic-bezier(.2,.7,.3,1); }
-  .alloc-counts{ display:flex; justify-content:space-between; gap:12px; }
+  .alloc-bar i.pend{ background:repeating-linear-gradient(90deg, var(--gold-deep) 0 2px, transparent 2px 4px); }
+  .alloc-counts{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 12px; }
 
   /* ---------- CARDS ---------- */
   .cards{
@@ -366,7 +406,7 @@
   .apply-grid{ display:grid; grid-template-columns:1fr; gap:clamp(40px,5vw,72px); }
   @media(min-width:980px){ .apply-grid{ grid-template-columns:1fr 1fr; } }
   .field{ margin-bottom:30px; }
-  label{
+  label, .field-lbl{
     display:block; font-family:var(--mono); font-size:10px; letter-spacing:.28em;
     text-transform:uppercase; color:var(--dim-2); margin-bottom:12px;
   }
@@ -380,13 +420,45 @@
   /* the motive field is the same component as the inputs, only taller */
   textarea{ display:block; min-height:104px; line-height:1.6; resize:vertical; }
   .picked{
-    display:flex; align-items:baseline; gap:12px;
+    display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px;
     border-bottom:1px solid var(--line-hi); padding:10px 0;
   }
-  .picked-no{ font-weight:800; font-size:17px; color:var(--gold-soft); font-variant-numeric:tabular-nums; }
-  .picked-no.none{ color:var(--dim-2); font-weight:500; }
+  .picked.is-invalid{ border-bottom-color:var(--red); }
+  .picked-pre{ font-weight:800; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); }
+  .picked-no{ font-weight:800; font-size:22px; letter-spacing:-.02em; color:var(--gold-soft); font-variant-numeric:tabular-nums; }
+  .picked-no.none{ color:var(--dim-2); font-weight:500; font-size:17px; letter-spacing:0; }
   .picked a{ margin-left:auto; }
   .picked a:hover .tag{ color:var(--gold-soft); }
+  .field-help{ font-size:14px; color:var(--dim); line-height:1.6; margin:-2px 0 10px; max-width:52ch; }
+  input[aria-invalid="true"], textarea[aria-invalid="true"]{ border-bottom-color:var(--red); }
+  .confirm{ display:flex; align-items:flex-start; gap:14px; }
+  .confirm input[type=checkbox]{
+    -webkit-appearance:none; appearance:none; flex:none; width:20px; height:20px; margin:1px 0 0;
+    border:1px solid var(--line-max); border-radius:0; background:transparent center/12px 12px no-repeat;
+    cursor:pointer; transition:border-color .2s ease, background-color .2s ease;
+  }
+  .confirm input[type=checkbox]:checked{
+    background-color:var(--gold); border-color:var(--gold);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M1.5 6.2l3 3 6-6.4' fill='none' stroke='%230a0a0a' stroke-width='2'/%3E%3C/svg%3E");
+  }
+  .confirm input[type=checkbox]:disabled{ border-color:var(--line-mid); cursor:default; }
+  .confirm input[type=checkbox][aria-invalid="true"]{ border-color:var(--red); }
+  .confirm .confirm-lbl{
+    font-family:var(--sans); font-size:15px; letter-spacing:0; text-transform:none;
+    color:var(--ink-2); line-height:1.45; margin:0; cursor:pointer;
+  }
+  .confirm input:disabled + .confirm-lbl{ color:var(--dim-2); cursor:default; }
+  textarea#fmotive{ min-height:150px; }
+  .apply-done{ position:relative; border:1px solid var(--line-hi); padding:clamp(26px,3.4vw,44px); }
+  .apply-done::before{ content:""; position:absolute; left:-1px; right:-1px; top:-1px; height:2px; background:var(--gold-ramp); }
+  .apply-done:focus{ outline:none; }
+  .apply-done h3{
+    font-size:clamp(22px,2.6vw,34px); font-weight:800; letter-spacing:-.03em; line-height:1.05;
+    text-transform:uppercase; color:var(--white); margin:18px 0 16px;
+  }
+  .apply-done p{ color:var(--dim); line-height:1.7; margin:0; max-width:46ch; }
+  .apply-done .done-no{ font-weight:800; font-size:clamp(44px,6vw,76px); letter-spacing:-.05em; line-height:1; margin:26px 0 0;
+    background:var(--gold-ramp); -webkit-background-clip:text; background-clip:text; color:transparent; font-variant-numeric:tabular-nums; }
   .access-response{
     font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
     color:var(--gold-soft); margin:22px 0 0; display:none; min-height:1.4em;
@@ -416,14 +488,55 @@
   .cd-unit:first-child .cd-val{
     background:var(--gold-ramp); -webkit-background-clip:text; background-clip:text; color:transparent;
   }
-  .drop-live{
-    margin:22px 0 0; display:none;
-    font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
-    color:var(--gold-soft);
-  }
-  .drop.is-launched .drop-live{ display:block; }
   .drop.is-launched .cd-val{ color:var(--dim-2); }
   .drop.is-launched .cd-unit:first-child .cd-val{ background:none; color:var(--dim-2); }
+
+  /* same countdown component, hero scale: one row at every width so it
+     stays above the fold on phones, larger numerals on desktop */
+  .drop--hero{ margin:0 0 clamp(44px,5.5vw,72px); }
+  .cd-title{
+    font-family:var(--sans); font-weight:800; font-size:clamp(12px,1.3vw,16px);
+    letter-spacing:.16em; text-transform:uppercase; color:var(--white); margin:0;
+  }
+  .cd-title{ text-wrap:balance; }
+  @media(max-width:619px){
+    .drop--hero .drop-line{ flex-direction:column; align-items:flex-start; gap:6px; }
+    .drop--hero .drop-line .bar{ display:none; }
+  }
+  .drop.is-launched .cd-title{
+    background:var(--gold-ramp); -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .drop--hero .drop-line{ margin-bottom:14px; flex-wrap:wrap; row-gap:8px; }
+  .drop--hero .drop-line .bar{ min-width:24px; }
+  .drop--hero .countdown{ grid-template-columns:repeat(4,1fr); }
+  .drop--hero .cd-unit{ padding:clamp(14px,1.9vw,26px) clamp(4px,1vw,16px); gap:clamp(8px,1vw,12px); }
+  .drop--hero .cd-val{ font-size:clamp(36px,6.4vw,96px); }
+
+  /* ---------- FOUNDERS 300 PACKAGE ----------
+     Numbers come from a CSS counter: add or remove an .pkg-item and the
+     01 / 02 / 03… sequence re-flows by itself. */
+  .f300-title{ max-width:none; margin-bottom:clamp(28px,3.2vw,44px); }
+  .f300-head{ display:grid; grid-template-columns:1fr; gap:clamp(32px,4vw,56px); align-items:start; margin-bottom:clamp(48px,6vw,84px); }
+  @media(min-width:980px){ .f300-head{ grid-template-columns:1fr 1fr; } }
+  .f300-head .no-list{ margin:0; }
+  .pkg-line{ margin-bottom:0; padding-bottom:22px; }
+  .cards--pkg{ counter-reset:benefit; }
+  .cards--pkg .pkg-item{ counter-increment:benefit; }
+  .cards--pkg .pkg-item .card-no::before{ content:counter(benefit, decimal-leading-zero); }
+  @media(min-width:720px){ .cards--pkg .pkg-feature{ grid-column:span 2; } }
+  .pkg-feature{ display:flex; flex-direction:column; }
+  .pkg-feature p{ max-width:44ch; }
+  .pkg-spec{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 14px; margin:auto 0 0; padding-top:32px; }
+  @media(min-width:720px){ .pkg-spec{ align-self:flex-end; justify-content:flex-end; } }
+  .pkg-spec-no{
+    font-weight:800; font-size:clamp(44px,6vw,84px); letter-spacing:-.05em; line-height:1;
+    background:var(--gold-ramp); -webkit-background-clip:text; background-clip:text; color:transparent;
+    font-variant-numeric:tabular-nums;
+  }
+  .pkg-spec-of{ font-weight:800; font-size:clamp(18px,2vw,26px); letter-spacing:-.03em; color:var(--dim-2); }
+  .card ul.pkg-tags{ list-style:none; margin:16px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px 14px; }
+  .pkg-more{ background:transparent; }
+  .pkg-more h3{ color:var(--gold-soft); }
 
   /* ---------- FOOTER ---------- */
   footer{ padding:44px 0 56px; }
@@ -466,9 +579,9 @@
 <nav class="rail" id="rail" aria-label="Section progress">
   <a href="#manifesto"><span>01</span><span class="rail-lbl">Transmission</span></a>
   <a href="#the-300"><span>02</span><span class="rail-lbl">The limit</span></a>
-  <a href="#first-uniform"><span>03</span><span class="rail-lbl">Drop clock</span></a>
-  <a href="#allocation"><span>04</span><span class="rail-lbl">Allocation</span></a>
-  <a href="#protocol"><span>05</span><span class="rail-lbl">Protocol</span></a>
+  <a href="#founders-300"><span>03</span><span class="rail-lbl">Founders 300</span></a>
+  <a href="#protocol"><span>04</span><span class="rail-lbl">Protocol</span></a>
+  <a href="#allocation"><span>05</span><span class="rail-lbl">Your number</span></a>
   <a href="#access"><span>06</span><span class="rail-lbl">Apply</span></a>
 </nav>
 
@@ -478,6 +591,22 @@
   <section class="hero" aria-label="KRYCTOR Founders 300">
     <span class="scanline" id="scanline" aria-hidden="true"></span>
     <div class="wrap">
+      <!-- FOUNDERS 300 COUNTDOWN: painted by render() in script section 10b.
+           Target date + ended title live in FOUNDERS_CONFIG. -->
+      <div class="drop drop--hero" data-drop-clock>
+        <div class="drop-line">
+          <p class="cd-title" id="cdTitle" data-drop-label>KRYCTOR 300 Founders Countdown Clock</p>
+          <span class="bar" aria-hidden="true"></span>
+          <span class="tag" data-drop-stamp>—</span>
+        </div>
+        <div class="countdown" role="timer" aria-live="off" aria-labelledby="cdTitle">
+          <div class="cd-unit"><span class="cd-val" data-cd="d">00</span><span class="tag">Days</span></div>
+          <div class="cd-unit"><span class="cd-val" data-cd="h">00</span><span class="tag">Hours</span></div>
+          <div class="cd-unit"><span class="cd-val" data-cd="m">00</span><span class="tag">Min</span></div>
+          <div class="cd-unit"><span class="cd-val" data-cd="s">00</span><span class="tag">Sec</span></div>
+        </div>
+      </div>
+
       <div class="hero-grid">
 
         <div>
@@ -585,83 +714,96 @@
     </div>
   </section>
 
-  <!-- ============ 03 — FIRST UNIFORM DROP CLOCK ============ -->
-  <section id="first-uniform">
+  <!-- ============ 03 — WHAT IS FOUNDERS 300 + PACKAGE ============ -->
+  <section id="founders-300">
     <div class="wrap">
-      <div class="sec-head reveal">
-        <span class="marker"><b>[ 03</b> / Drop clock <b>]</b></span>
-        <h2 class="display" id="dropHead" aria-label="The first uniform is inbound.">
-          <span class="dl" data-decode="THE FIRST UNIFORM" aria-hidden="true">THE FIRST UNIFORM</span>
-          <span class="dl gold" data-decode="IS INBOUND." aria-hidden="true">IS INBOUND.</span>
+      <div class="sec-head f300-title reveal">
+        <span class="marker"><b>[ 03</b> / Founders 300 <b>]</b></span>
+        <h2 class="display" aria-label="What is KRYCTOR Founders 300?">
+          <span class="dl" data-decode="WHAT IS KRYCTOR" aria-hidden="true">WHAT IS KRYCTOR</span>
+          <span class="dl gold" data-decode="FOUNDERS 300?" aria-hidden="true">FOUNDERS 300?</span>
         </h2>
-        <p class="body-copy">
-          The origin piece ships once, to the 300 first. Everything above is the
-          reason. <b>This is the date.</b>
-        </p>
       </div>
-
-      <div class="drop reveal" id="drop">
-        <div class="drop-line">
-          <span class="tag tag-gold" id="dropLabel">Debuts in</span>
-          <span class="bar" aria-hidden="true"></span>
-          <span class="tag" id="dropStamp">—</span>
-        </div>
-
-        <div class="countdown" id="countdown" role="timer" aria-live="off"
-             aria-label="Time remaining until the first uniform drops">
-          <div class="cd-unit"><span class="cd-val" id="cdD">00</span><span class="tag">Days</span></div>
-          <div class="cd-unit"><span class="cd-val" id="cdH">00</span><span class="tag">Hours</span></div>
-          <div class="cd-unit"><span class="cd-val" id="cdM">00</span><span class="tag">Min</span></div>
-          <div class="cd-unit"><span class="cd-val" id="cdS">00</span><span class="tag">Sec</span></div>
-        </div>
-
-        <p class="drop-live" id="dropLive">// The first uniform is here. The 300 wear it first.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 04 — INTERACTIVE ALLOCATION ============ -->
-  <section id="allocation">
-    <div class="wrap">
-      <div class="sec-head reveal">
-        <span class="marker"><b>[ 04</b> / Allocation map <b>]</b></span>
-        <h2 class="display" aria-label="Pick your number.">
-          <span class="dl" data-decode="PICK YOUR" aria-hidden="true">PICK YOUR</span>
-          <span class="dl gold" data-decode="NUMBER." aria-hidden="true">NUMBER.</span>
-        </h2>
-        <p class="body-copy">
-          Three hundred slots. Hover to inspect one, click to reserve it — your pick
-          drops straight into the application below.
-        </p>
-      </div>
-
-      <div class="alloc-wrap reveal">
-        <div class="alloc" id="alloc" role="group" aria-label="Founder number allocation map"></div>
-
-        <aside class="alloc-panel">
-          <span class="tag">Unit</span>
-          <div class="alloc-read" id="allocRead">—</div>
-          <div class="alloc-state free" id="allocState">Hover the map</div>
-
-          <div class="alloc-bar"><i id="allocBar"></i></div>
-          <div class="alloc-counts">
-            <span class="tag">Open <b style="color:var(--gold-soft)" id="cOpen">—</b></span>
-            <span class="tag">Taken <b style="color:var(--ink-2)" id="cTaken">—</b></span>
-          </div>
-
-          <p class="form-note" style="margin-top:26px">
-            // Allocation data is placeholder. Wire it to your backend before launch.
+      <div class="f300-head">
+        <div class="reveal">
+          <p class="body-copy">
+            The first 300 people to officially take part in the birth of the KRYCTOR
+            community. <b>Not customers — permanent members</b>, with benefits, identity
+            and recognition that belong only to them inside the KRYCTOR ecosystem.
           </p>
-        </aside>
+        </div>
+        <ul class="no-list reveal">
+          <li><span>//</span> 300 people.</li>
+          <li><span>//</span> 300 numbers.</li>
+          <li><span>//</span> One original generation.</li>
+        </ul>
+      </div>
+
+      <div class="drop-line pkg-line reveal">
+        <span class="tag tag-gold">The Founders 300 package</span>
+        <span class="bar" aria-hidden="true"></span>
+        <span class="tag">Only 300. Forever.</span>
+      </div>
+
+      <!-- To add a privilege later: copy one .pkg-item article above .pkg-more.
+           Its number (08, 09…) is generated automatically. -->
+      <div class="cards cards--pkg reveal">
+        <article class="card pkg-item pkg-feature">
+          <span class="card-no" aria-hidden="true"></span>
+          <h3>Numbered collector's Gi</h3>
+          <p>An exclusive KRYCTOR collector's Gi, numbered individually with your Founders number. A special piece of the brand, made to train in.</p>
+          <p class="pkg-spec">
+            <span class="tag tag-gold">KRYCTOR Founders 300</span>
+            <span class="pkg-spec-no" data-founder-no data-default="#117">#117</span><span class="pkg-spec-of">/300</span>
+          </p>
+        </article>
+        <article class="card pkg-item">
+          <span class="card-no" aria-hidden="true"></span>
+          <h3>Founders 300 collector's mug</h3>
+          <p>A collector's mug printed with the KRYCTOR mark, the Founders 300 identity and the collection's inscription.</p>
+        </article>
+        <article class="card pkg-item">
+          <span class="card-no" aria-hidden="true"></span>
+          <h3>Exclusive digital access</h3>
+          <p>A private access link to the Founders 300 area of the website, and later inside the official KRYCTOR app.</p>
+        </article>
+        <article class="card pkg-item">
+          <span class="card-no" aria-hidden="true"></span>
+          <h3>Lifetime Founders 300 membership</h3>
+          <p>A permanent member of Founders 300. Your name can appear in the historical record of the original 300.</p>
+          <ul class="pkg-tags">
+            <li class="tag">Website</li><li class="tag">Private area</li><li class="tag">App</li><li class="tag">Founder Registry</li>
+          </ul>
+        </article>
+        <article class="card pkg-item">
+          <span class="card-no" aria-hidden="true"></span>
+          <h3>Exclusive KRYCTOR offers</h3>
+          <p>Members-only promotions, special merch, early launches, limited-edition products and opportunities reserved for the 300.</p>
+        </article>
+        <article class="card pkg-item">
+          <span class="card-no" aria-hidden="true"></span>
+          <h3>Birthday Kryctorian gift</h3>
+          <p>A piece of Kryctorian merch on your birthday, subject to the program's terms.</p>
+        </article>
+        <article class="card pkg-item">
+          <span class="card-no" aria-hidden="true"></span>
+          <h3>Support the next generation</h3>
+          <p>Sponsorship and support initiatives where founders help young athletes, competitors and emerging grappling talent grow.</p>
+        </article>
+        <article class="card pkg-more">
+          <span class="card-no">+</span>
+          <h3>And this is only the beginning.</h3>
+          <p>More Founders 300 privileges will be revealed as the KRYCTOR ecosystem grows.</p>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- ============ 05 ============ -->
+  <!-- ============ 04 ============ -->
   <section id="protocol">
     <div class="wrap">
       <div class="sec-head reveal">
-        <span class="marker"><b>[ 05</b> / Founder protocol <b>]</b></span>
+        <span class="marker"><b>[ 04</b> / Founder protocol <b>]</b></span>
         <h2 class="display" aria-label="A gi can be bought. A number must be earned.">
           <span class="dl" data-decode="A GI CAN BE BOUGHT." aria-hidden="true">A GI CAN BE BOUGHT.</span>
           <span class="dl" aria-hidden="true"><span class="soft">A NUMBER MUST BE</span> <span class="gold">EARNED.</span></span>
@@ -691,6 +833,53 @@
     </div>
   </section>
 
+  <!-- ============ 05 — SELECT YOUR FOUNDERS NUMBER ============ -->
+  <section id="allocation">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="marker"><b>[ 05</b> / Allocation map <b>]</b></span>
+        <h2 class="display" aria-label="Select your Founders number.">
+          <span class="dl" data-decode="SELECT YOUR" aria-hidden="true">SELECT YOUR</span>
+          <span class="dl gold" data-decode="FOUNDERS NUMBER." aria-hidden="true">FOUNDERS NUMBER.</span>
+        </h2>
+        <p class="body-copy">
+          Every number from 001 to 300 is one Founders position and the number on
+          that founder's Gi. Pick an open one — it carries straight into your application.
+        </p>
+      </div>
+
+      <div class="alloc-wrap reveal">
+        <div class="alloc" id="alloc" role="group" aria-label="Founders numbers 001 to 300"></div>
+
+        <aside class="alloc-panel">
+          <span class="tag">Founders number</span>
+          <div class="alloc-read" id="allocRead">—</div>
+          <div class="alloc-state free" id="allocState">Hover the map</div>
+
+          <ul class="alloc-legend" aria-label="Number states">
+            <li><i class="sw" aria-hidden="true"></i><span class="tag">Available</span></li>
+            <li><i class="sw sw-sel" aria-hidden="true"></i><span class="tag">Selected</span></li>
+            <li><i class="sw sw-pending" aria-hidden="true"></i><span class="tag">Pending</span></li>
+            <li><i class="sw sw-taken" aria-hidden="true"></i><span class="tag">Taken</span></li>
+            <li><i class="sw sw-reserved" aria-hidden="true"></i><span class="tag">Reserved</span></li>
+          </ul>
+
+          <div class="alloc-bar"><i id="allocBar"></i><i class="pend" id="allocBarPending"></i></div>
+          <div class="alloc-counts">
+            <span class="tag">Open <b style="color:var(--gold-soft)" id="cOpen">—</b></span>
+            <span class="tag">Pending <b style="color:var(--ink-2)" id="cPending">—</b></span>
+            <span class="tag">Taken <b style="color:var(--ink-2)" id="cTaken">—</b></span>
+          </div>
+
+          <p class="form-note" id="allocNote" style="margin-top:26px">
+            // 001 and 300 are reserved and never assignable. Every number from 002 to 299
+            is open until a live statusEndpoint in FOUNDERS_CONFIG reports otherwise.
+          </p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ 06 ============ -->
   <section id="access">
     <div class="wrap">
@@ -712,32 +901,49 @@
         <form id="accessForm" class="reveal" novalidate
               action="https://script.google.com/macros/s/AKfycby4MpJfH4MTfPgbE2FRlnxPVN16BywbXAYvF9WGF5Z10TmpzqE-O-0L4TPrfzNKQqLK/exec" method="POST">
           <div class="field">
-            <label for="fname">Identity</label>
+            <label for="fname">Full name</label>
             <input type="text" id="fname" name="name" required autocomplete="name" placeholder="Name / handle">
           </div>
           <div class="field">
-            <label for="femail">Contact signal</label>
-            <input type="email" id="femail" name="email" required autocomplete="email" placeholder="you@domain.com">
+            <label for="femail">Email</label>
+            <input type="email" id="femail" name="email" required autocomplete="email" inputmode="email" placeholder="you@domain.com">
           </div>
           <div class="field">
-            <label for="pickedNo">Requested unit</label>
-            <div class="picked">
-              <span class="picked-no none" id="pickedNo">Not selected</span>
+            <label for="flocation">Country / City</label>
+            <input type="text" id="flocation" name="location" required autocomplete="off" placeholder="Panama / Panama City">
+          </div>
+          <div class="field">
+            <span class="field-lbl" id="pickedLbl">Selected Founders number</span>
+            <div class="picked" id="pickedRow" role="group" aria-labelledby="pickedLbl">
+              <span class="picked-pre">Your selected Founders number:</span>
+              <span class="picked-no none" id="pickedNo" aria-live="polite">Not selected</span>
               <a href="#allocation"><span class="tag">Open the map ↑</span></a>
             </div>
             <input type="hidden" name="founder_number" id="founderNumber" value="">
           </div>
+          <div class="field confirm">
+            <input type="checkbox" id="fconfirm" name="number_confirmed" value="yes" required disabled>
+            <label for="fconfirm" class="confirm-lbl" id="confirmLbl">Select a number on the map to confirm it here.</label>
+          </div>
           <div class="field">
-            <label for="fmotive">Why do you want to be one of the 300 founders?</label>
-            <textarea id="fmotive" name="motivation" rows="3" maxlength="600" required
-                      placeholder="Tell us what pulls you toward the first 300…"></textarea>
+            <label for="fmotive">Why do you want to be part of KRYCTOR Founders 300?</label>
+            <p class="field-help" id="fmotiveHelp">Tell us what Kryctor, grappling, and becoming one of the original 300 Founders means to you.</p>
+            <textarea id="fmotive" name="motivation" rows="5" maxlength="1500" required aria-describedby="fmotiveHelp"
+                      placeholder="In your own words…"></textarea>
           </div>
           <input type="hidden" name="_subject" value="KRYCTOR — new Founders 300 application">
           <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true"
                  style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
-          <button type="submit" class="ghost" data-scramble><span class="lbl">Apply to be a founder</span> <span class="arw">↗</span></button>
+          <button type="submit" class="ghost" data-scramble><span class="lbl">Apply to become one of the Founders 300</span> <span class="arw">↗</span></button>
           <p class="access-response" id="accessResponse" role="status" aria-live="polite"></p>
         </form>
+
+        <div class="apply-done" id="applyDone" tabindex="-1" hidden>
+          <span class="tag tag-gold">Application received · Pending review</span>
+          <h3>Your Founders 300 application has been received</h3>
+          <p>Your selected number is currently being processed. Welcome to the beginning of something bigger than a Gi.</p>
+          <p class="done-no" id="doneNo"></p>
+        </div>
       </div>
     </div>
   </section>
@@ -763,11 +969,11 @@
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ============================================================
-     FIRST UNIFORM — LAUNCH DATE (single source of truth)
+     FOUNDERS 300 — CONFIG (single source of truth)
      ------------------------------------------------------------
-     Change the drop date HERE and nowhere else. The countdown, the
-     stamp under "Debuts in" and the post-launch copy all read this
-     one value.
+     Change these values HERE and nowhere else.
+
+     countdownTarget
 
      Format: ISO-8601 with an explicit UTC offset, so the instant is
      the same for every visitor on every device. KRYCTOR runs on
@@ -779,8 +985,60 @@
      Never write it as a bare "2026-12-15T19:00:00" — browsers read
      that as the visitor's own local time and the clock drifts by
      timezone.
+
+     countdownEndedTitle  replaces the countdown title at zero.
+     totalNumbers         how many cells the map draws (001 → 300).
+     firstNumber          lowest ASSIGNABLE number. 001 sits below it and is
+     lastNumber           highest ASSIGNABLE number. 300 sits above it.
+                          Both bookends stay visible on the map but can never
+                          be selected, submitted or counted as open. With
+                          2 and 299 the assignable pool is exactly 298.
+     statusEndpoint       optional URL returning live availability as JSON:
+                            { "taken": [12, 45], "pending": [7] }
+                          Leave '' and every assignable number stays open.
+                          Numbers outside firstNumber–lastNumber in that
+                          payload are ignored.
      ============================================================ */
-  var FIRST_UNIFORM_LAUNCH_DATE = '2026-12-15T19:00:00-05:00';
+  var FOUNDERS_CONFIG = {
+    countdownTarget:     '2026-12-15T19:00:00-05:00',
+    countdownEndedTitle: 'The Founders 300 era has begun',
+    totalNumbers:        300,
+    firstNumber:         2,
+    lastNumber:          299,
+    statusEndpoint:      ''
+  };
+
+  /* ============================================================
+     FOUNDERS NUMBER VALIDITY — single source of truth.
+     Nothing else in this file may decide what counts as a usable
+     Founders number; everything asks these two functions.
+
+     STRUCTURAL VALIDITY (here) is not AVAILABILITY (status map):
+     074 is always structurally valid, but it is only available
+     while no real application holds it.
+     ============================================================ */
+  var MIN_FOUNDER_NUMBER = FOUNDERS_CONFIG.firstNumber;
+  var MAX_FOUNDER_NUMBER = FOUNDERS_CONFIG.lastNumber;
+
+  /* Normalise anything arriving from a boundary (storage, JSON, the DOM,
+     a hand-edited hidden input) to a canonical integer, or null.
+     "022", "22" and 22 are all the same number; "2.5", "-1", "1e3",
+     "", "abc", NaN, Infinity, null, undefined and objects are all null. */
+  function toFounderNumber(value){
+    if(typeof value === 'number') return Number.isInteger(value) ? value : null;
+    if(typeof value === 'string'){
+      var s = value.trim();
+      if(!/^\d+$/.test(s)) return null;
+      var n = parseInt(s, 10);
+      return Number.isInteger(n) ? n : null;
+    }
+    return null;
+  }
+
+  function isValidFounderNumber(value){
+    var n = toFounderNumber(value);
+    return n !== null && n >= MIN_FOUNDER_NUMBER && n <= MAX_FOUNDER_NUMBER;
+  }
   var $  = function(s,c){ return (c||document).querySelector(s); };
   var $$ = function(s,c){ return Array.prototype.slice.call((c||document).querySelectorAll(s)); };
 
@@ -929,7 +1187,7 @@
         });
       });
     }, { rootMargin:'-45% 0px -45% 0px' });
-    ['manifesto','the-300','first-uniform','allocation','protocol','access'].forEach(function(id){
+    ['manifesto','the-300','founders-300','protocol','allocation','access'].forEach(function(id){
       var s = document.getElementById(id); if(s) rio.observe(s);
     });
   }
@@ -937,56 +1195,62 @@
   /* ---------- 10b. drop clock (first uniform) ----------
      One interval, absolute-time math: reloading, closing the browser or
      coming back on another device all land on the same remaining time,
-     because the only reference is FIRST_UNIFORM_LAUNCH_DATE above. */
+     because the only reference is FOUNDERS_CONFIG.countdownTarget above.
+     Every [data-drop-clock] on the page (currently the hero) is painted from
+     the same render() call on the same tick, so they can never disagree. */
   (function(){
-    var drop = $('#drop');
-    if(!drop) return;
+    var clocks = $$('[data-drop-clock]').map(function(root){
+      return {
+        root:  root,
+        d: $('[data-cd="d"]', root), h: $('[data-cd="h"]', root),
+        m: $('[data-cd="m"]', root), s: $('[data-cd="s"]', root),
+        label: $('[data-drop-label]', root),
+        stamp: $('[data-drop-stamp]', root)
+      };
+    });
+    if(!clocks.length) return;
 
-    var TARGET = new Date(FIRST_UNIFORM_LAUNCH_DATE).getTime();
+    var TARGET = new Date(FOUNDERS_CONFIG.countdownTarget).getTime();
     if(isNaN(TARGET)){
-      if(window.console) console.warn('FIRST_UNIFORM_LAUNCH_DATE is not a valid date:', FIRST_UNIFORM_LAUNCH_DATE);
+      if(window.console) console.warn('FOUNDERS_CONFIG.countdownTarget is not a valid date:', FOUNDERS_CONFIG.countdownTarget);
       return;
     }
 
-    var dEl = $('#cdD'), hEl = $('#cdH'), mEl = $('#cdM'), sEl = $('#cdS');
-    var label = $('#dropLabel'), stampEl = $('#dropStamp'), head = $('#dropHead');
     var timer = null, launched = false;
 
     function p2(n){ return String(n).padStart(2,'0'); }
+    function each(fn){ clocks.forEach(fn); }
 
     /* the target instant, printed in UTC so it reads the same everywhere */
     (function(){
       var t = new Date(TARGET);
-      stampEl.textContent = t.getUTCFullYear()+'.'+p2(t.getUTCMonth()+1)+'.'+p2(t.getUTCDate())
-                          +' · '+p2(t.getUTCHours())+':'+p2(t.getUTCMinutes())+' UTC';
+      var stamp = t.getUTCFullYear()+'.'+p2(t.getUTCMonth()+1)+'.'+p2(t.getUTCDate())
+                +' · '+p2(t.getUTCHours())+':'+p2(t.getUTCMinutes())+' UTC';
+      each(function(c){ if(c.stamp) c.stamp.textContent = stamp; });
     })();
 
     /* write only when the value actually changed — no needless repaints */
-    function put(el, val){ if(el.textContent !== val) el.textContent = val; }
+    function put(el, val){ if(el && el.textContent !== val) el.textContent = val; }
 
     function launch(){
       if(launched) return;
       launched = true;
       clearInterval(timer); timer = null;
-      drop.classList.add('is-launched');
-      label.textContent = 'Status';
-      stampEl.textContent = 'Released';
-      /* swap the headline copy; data-decode is updated too so the reveal
-         animation resolves to the launched line whenever it runs */
-      var lines = $$('.dl', head);
-      if(lines.length === 2){
-        head.setAttribute('aria-label', 'The first uniform is here.');
-        lines[0].setAttribute('data-decode', 'THE FIRST UNIFORM');
-        lines[1].setAttribute('data-decode', 'IS HERE.');
-        lines[0].textContent = 'THE FIRST UNIFORM';
-        lines[1].textContent = 'IS HERE.';
-      }
+      each(function(c){
+        c.root.classList.add('is-launched');
+        if(c.label) c.label.textContent = FOUNDERS_CONFIG.countdownEndedTitle;
+      });
+    }
+
+    /* one calculation per tick, written to every instance */
+    function paint(d, h, m, s){
+      each(function(c){ put(c.d, d); put(c.h, h); put(c.m, m); put(c.s, s); });
     }
 
     function render(){
       var left = TARGET - Date.now();
       if(left <= 0){                      /* never negative */
-        put(dEl,'00'); put(hEl,'00'); put(mEl,'00'); put(sEl,'00');
+        paint('00','00','00','00');
         launch();
         return;
       }
@@ -994,60 +1258,166 @@
       var d = Math.floor(s / 86400); s -= d * 86400;
       var h = Math.floor(s / 3600);  s -= h * 3600;
       var m = Math.floor(s / 60);    s -= m * 60;
-      put(dEl, p2(d)); put(hEl, p2(h)); put(mEl, p2(m)); put(sEl, p2(s));
+      paint(p2(d), p2(h), p2(m), p2(s));
     }
 
     render();                             /* paint before the first tick */
     if(!launched) timer = setInterval(render, 1000);
   })();
 
-  /* ---------- 11. allocation map ----------
-     PLACEHOLDER DATA. `taken` is generated deterministically so the demo
-     looks alive; replace with the real allocation list from your backend. */
-  var TOTAL = 300;
-  var taken = (function(){
-    var set = {}, seed = 20260827;
-    function rnd(){ seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
-    while(Object.keys(set).length < 87){ set[Math.floor(rnd()*TOTAL)+1] = true; }
-    return set;
-  })();
+  /* ---------- 11. founders number selector ----------
+     Each number has one status: 'available' | 'pending' | 'taken'.
+     The browser only DISPLAYS it and blocks non-available numbers. The
+     definitive assignment (and stopping two people getting the same number)
+     must be decided server-side, where statusEndpoint reads from. */
+  var TOTAL = FOUNDERS_CONFIG.totalNumbers;
+  var PAD = Math.max(2, String(TOTAL).length);   /* 300 -> 001, 1000 -> 0001 */
+  function pad(n){ return String(n).padStart(PAD,'0'); }
 
   var alloc = $('#alloc'), read = $('#allocRead'), state = $('#allocState');
-  var bar = $('#allocBar'), cOpen = $('#cOpen'), cTaken = $('#cTaken');
-  var pickedNo = $('#pickedNo'), founderInput = $('#founderNumber');
-  var selected = null;
+  var bar = $('#allocBar'), barPend = $('#allocBarPending');
+  var cOpen = $('#cOpen'), cPending = $('#cPending'), cTaken = $('#cTaken'), allocNote = $('#allocNote');
+  var pickedNo = $('#pickedNo'), pickedRow = $('#pickedRow'), founderInput = $('#founderNumber');
+  var confirmBox = $('#fconfirm'), confirmLbl = $('#confirmLbl');
+  var selected = null, status = {}, cells = {};
+  var STATE_TEXT = { available:'Available', pending:'Pending — in review',
+                     taken:'Taken — founder', reserved:'Reserved — not assignable' };
 
-  function pad(n){ return String(n).padStart(3,'0'); }
+  /* the status a number falls back to with no real application against it */
+  function baseStatus(n){ return isValidFounderNumber(n) ? 'available' : 'reserved'; }
+
+  /* the chosen number survives a reload (session); a sent application is
+     remembered on this device so its number keeps showing as pending */
+  var PICK_KEY = 'kryctor_f300_pick', APPLIED_KEY = 'kryctor_f300_applied';
+  function store(area, key, val){
+    try{ if(val === null) window[area].removeItem(key); else window[area].setItem(key, String(val)); }catch(e){}
+  }
+  function recall(area, key){ try{ return window[area].getItem(key); }catch(e){ return null; } }
 
   var frag = document.createDocumentFragment();
   for(var n=1; n<=TOTAL; n++){
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = 'cell' + (taken[n] ? ' taken' : '');
+    b.className = 'cell';
     b.dataset.n = n;
-    b.setAttribute('aria-label', 'Unit ' + pad(n) + (taken[n] ? ' — taken' : ' — available'));
-    if(taken[n]) b.setAttribute('aria-disabled','true');
+    /* visible number; aria-hidden because the aria-label already says it */
+    var no = document.createElement('span');
+    no.className = 'cell-no';
+    no.setAttribute('aria-hidden','true');
+    no.textContent = pad(n);
+    b.appendChild(no);
     frag.appendChild(b);
+    cells[n] = b; status[n] = baseStatus(n);
   }
   alloc.appendChild(frag);
 
-  var takenCount = Object.keys(taken).length;
-  cTaken.textContent = takenCount;
-  cOpen.textContent  = TOTAL - takenCount;
-  requestAnimationFrame(function(){
-    bar.style.width = (takenCount / TOTAL * 100).toFixed(1) + '%';
-  });
+  function paintCell(n){
+    var c = cells[n], st = status[n];
+    c.classList.toggle('taken',    st === 'taken');
+    c.classList.toggle('pending',  st === 'pending');
+    c.classList.toggle('reserved', st === 'reserved');
+    c.classList.toggle('sel',     selected === n);
+    if(st === 'available') c.removeAttribute('aria-disabled'); else c.setAttribute('aria-disabled','true');
+    c.setAttribute('aria-label', 'Founders number ' + pad(n) + ' — ' + (selected === n ? 'selected' : st));
+  }
+
+  function updateCounts(){
+    /* the pool is the ASSIGNABLE range, not the 300 drawn cells: the two
+       reserved bookends are never open, pending or taken. */
+    var t = 0, p = 0, pool = 0;
+    for(var i=1; i<=TOTAL; i++){
+      if(!isValidFounderNumber(i)) continue;
+      pool++;
+      if(status[i] === 'taken') t++; else if(status[i] === 'pending') p++;
+    }
+    cTaken.textContent = t; cPending.textContent = p; cOpen.textContent = pool - t - p;
+    requestAnimationFrame(function(){
+      bar.style.width     = pool ? (t / pool * 100).toFixed(1) + '%' : '0%';
+      barPend.style.width = pool ? (p / pool * 100).toFixed(1) + '%' : '0%';
+    });
+  }
+
+  function setSelected(n){
+    var prev = selected;
+    /* the only door into `selected`: anything not structurally valid
+       (001, 300, out of range, malformed) becomes "no selection". */
+    selected = isValidFounderNumber(n) ? toFounderNumber(n) : null;
+    if(prev) paintCell(prev);
+    if(selected) paintCell(selected);
+    var label = selected ? '#' + pad(selected) : '';
+    founderInput.value = selected ? pad(selected) : '';
+    pickedNo.textContent = selected ? label : 'Not selected';
+    pickedNo.classList.toggle('none', !selected);
+    pickedRow.classList.remove('is-invalid');
+    /* a new number always needs a fresh confirmation */
+    confirmBox.checked = false;
+    confirmBox.disabled = !selected;
+    confirmBox.removeAttribute('aria-invalid');
+    confirmLbl.textContent = selected
+      ? 'I confirm that ' + label + ' is my selected Founders 300 number.'
+      : 'Select a number on the map to confirm it here.';
+    $$('[data-founder-no]').forEach(function(el){
+      el.textContent = selected ? label : el.getAttribute('data-default');
+    });
+    store('sessionStorage', PICK_KEY, selected);
+  }
+
+  function applyStatus(data){
+    var i, mine = toFounderNumber(recall('localStorage', APPLIED_KEY));
+    for(i=1; i<=TOTAL; i++) status[i] = baseStatus(i);
+    /* a live payload may only move a number that is BOTH structurally valid
+       and currently free — so it can never resurrect 001/300 or smuggle in
+       a number outside the range. Taken wins over pending. */
+    (data.taken   || []).forEach(function(k){
+      var n = toFounderNumber(k);
+      if(n !== null && status[n] === 'available') status[n] = 'taken';
+    });
+    (data.pending || []).forEach(function(k){
+      var n = toFounderNumber(k);
+      if(n !== null && status[n] === 'available') status[n] = 'pending';
+    });
+    if(mine !== null && status[mine] === 'available') status[mine] = 'pending';
+    if(selected && status[selected] !== 'available') setSelected(null);   /* someone got there first */
+    for(i=1; i<=TOTAL; i++) paintCell(i);
+    updateCounts();
+  }
 
   function show(n){
     read.textContent = pad(n);
-    if(taken[n]){
-      state.textContent = 'Allocated';
-      state.className = 'alloc-state taken';
-    } else {
-      state.textContent = selected === n ? 'Reserved by you' : 'Available';
+    var st = status[n];
+    if(st === 'available'){
+      state.textContent = selected === n ? 'Selected by you' : 'Available';
       state.className = 'alloc-state free';
+    } else {
+      state.textContent = (+recall('localStorage', APPLIED_KEY) === n) ? 'Your application — pending' : STATE_TEXT[st];
+      state.className = 'alloc-state ' + st;
     }
   }
+
+  if(FOUNDERS_CONFIG.statusEndpoint){
+    alloc.setAttribute('aria-busy','true');
+    allocNote.hidden = true;
+    applyStatus({});
+    fetch(FOUNDERS_CONFIG.statusEndpoint, { cache:'no-store' })
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(applyStatus)
+      .catch(function(){
+        allocNote.textContent = '// Live availability could not load. Every application is still checked by the KRYCTOR team.';
+        allocNote.hidden = false;
+      })
+      .then(function(){ alloc.removeAttribute('aria-busy'); });
+  } else {
+    /* No live source configured: every assignable number is open. Demo
+       "taken"/"pending" data must never decide real availability. */
+    applyStatus({});
+  }
+
+  (function(){                                  /* restore a pick made before a reload */
+    var saved = toFounderNumber(recall('sessionStorage', PICK_KEY));
+    var usable = saved !== null && isValidFounderNumber(saved) && status[saved] === 'available';
+    if(saved !== null && !usable) store('sessionStorage', PICK_KEY, null);  /* drop stale/invalid */
+    setSelected(usable ? saved : null);
+  })();
 
   alloc.addEventListener('pointerover', function(ev){
     var c = ev.target.closest('.cell'); if(c) show(+c.dataset.n);
@@ -1065,26 +1435,17 @@
   alloc.addEventListener('click', function(ev){
     var c = ev.target.closest('.cell'); if(!c) return;
     var n = +c.dataset.n;
-    if(taken[n]){ show(n); return; }
-    $$('.cell.sel', alloc).forEach(function(el){ el.classList.remove('sel'); });
-    if(selected === n){
-      selected = null;
-      pickedNo.textContent = 'Not selected';
-      pickedNo.classList.add('none');
-      founderInput.value = '';
-    } else {
-      selected = n;
-      c.classList.add('sel');
-      pickedNo.textContent = 'Unit ' + pad(n);
-      pickedNo.classList.remove('none');
-      founderInput.value = pad(n);
-    }
+    /* reserved (001/300), pending and taken can't be picked. The validity
+       check is deliberately separate from the status check. */
+    if(!isValidFounderNumber(n) || status[n] !== 'available'){ show(n); return; }
+    if(selected === n){ setSelected(null); show(n); return; }
+    setSelected(n);
     show(n);
-    if(selected === n) carryToForm();     /* a fresh pick carries you to the form */
+    carryToForm();                                      /* a fresh pick carries you to the form */
   });
 
   /* ---------- 11b. picking a number carries you to the form ----------
-     Only a real selection scrolls: clicking a taken cell returned above, and
+     Only a real selection scrolls: clicking a taken/pending cell returns above, and
      de-selecting leaves you on the map. A newer pick cancels the pending
      scroll, so one selection never produces two travels. */
   var accessFormEl = $('#accessForm'), firstField = $('#fname');
@@ -1122,7 +1483,7 @@
       if(!reduced) alloc.classList.add('flash');
 
       /* el foco también viaja, para teclado y lectores de pantalla */
-      var cell = $('.cell.sel', alloc) || $('.cell:not(.taken)', alloc);
+      var cell = $('.cell.sel', alloc) || $('.cell:not([aria-disabled])', alloc);
       if(cell) setTimeout(function(){
         cell.focus({ preventScroll: true });
       }, reduced ? 0 : 640);
@@ -1157,17 +1518,50 @@
     response.textContent = msg;
   }
 
+  var applyDone = $('#applyDone'), doneNo = $('#doneNo');
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  /* clear an error as soon as the person fixes that field */
+  $$('input, textarea', form).forEach(function(el){
+    el.addEventListener('input',  function(){ el.removeAttribute('aria-invalid'); });
+    el.addEventListener('change', function(){ el.removeAttribute('aria-invalid'); });
+  });
+
+  function firstProblem(){
+    var name = $('#fname'), email = $('#femail'), loc = $('#flocation'), motive = $('#fmotive');
+    if(!name.value.trim())                  return { el:name,   msg:'// Add your full name.' };
+    if(!email.value.trim())                 return { el:email,  msg:'// Add your email.' };
+    if(!EMAIL_RE.test(email.value.trim()))  return { el:email,  msg:'// That email doesn’t look right. Use the format you@domain.com.' };
+    if(!loc.value.trim())                   return { el:loc,    msg:'// Add your country and city.' };
+    if(!isValidFounderNumber(selected) || status[selected] !== 'available')
+                                            return { el:null,   msg:'// Select an open Founders number on the map.' };
+    if(!confirmBox.checked)                 return { el:confirmBox, msg:'// Confirm that #' + pad(selected) + ' is the number you want.' };
+    if(!motive.value.trim())                return { el:motive, msg:'// Tell us why you want to be part of Founders 300.' };
+    return null;
+  }
+
   form.addEventListener('submit', function(e){
     e.preventDefault();
 
-    if(!form.checkValidity()){
-      say('// Incomplete. Check identity, contact signal and motive.', true);
-      form.reportValidity();
+    var problem = firstProblem();
+    if(problem){
+      say(problem.msg, true);
+      if(problem.el){ problem.el.setAttribute('aria-invalid','true'); problem.el.focus(); }
+      else { pickedRow.classList.add('is-invalid'); }
       return;
     }
 
-    var btn  = form.querySelector('button[type=submit]');
-    var unit = founderInput.value ? ' UNIT ' + founderInput.value + '.' : '';
+    var btn = form.querySelector('button[type=submit]');
+    /* Last gate before the payload leaves. The hidden input is what actually
+       travels, so the number is re-derived FROM it: a hand-edited DOM value
+       (001, 300, "abc") is refused here even though the map never offered it.
+       This is a client-side guard — the receiving script must repeat it. */
+    var n = toFounderNumber(founderInput.value);
+    if(n === null || !isValidFounderNumber(n) || n !== selected || status[n] !== 'available'){
+      say('// Select an open Founders number on the map.', true);
+      pickedRow.classList.add('is-invalid');
+      return;
+    }
     btn.disabled = true;
 
     /* the staged readout runs while the request is in flight */
@@ -1186,13 +1580,23 @@
     fetch(ENDPOINT, {
       method: 'POST',
       mode: 'no-cors',
-      body: new FormData(form)
+      body: new FormData(form)          /* includes founder_number, number_confirmed, location, motivation */
     })
     .then(function(){
       /* Apps Script no expone su respuesta al navegador (no-cors),
          así que una promesa resuelta sin error se trata como éxito. */
       clearTimeout(stepTimer);
-      say('// Signal received. Stand by.' + unit);
+      /* shown as pending on this device only — never as taken. The real
+         status comes back from statusEndpoint once the team reviews it. */
+      store('localStorage', APPLIED_KEY, n);
+      status[n] = 'pending';
+      setSelected(null);
+      paintCell(n);
+      updateCounts();
+      doneNo.textContent = '#' + pad(n);
+      form.hidden = true;
+      applyDone.hidden = false;
+      applyDone.focus({ preventScroll:true });
     })
     .catch(function(){
       clearTimeout(stepTimer);
